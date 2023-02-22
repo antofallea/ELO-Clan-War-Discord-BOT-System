@@ -1,0 +1,27 @@
+{
+  "name": "clan-war",
+  "version": "1.0.0",
+  "description": "Clanwar system created by Jamaicah and andrew",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Jamaicah/Clan-War.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Jamaicah/Clan-War/issues"
+  },
+  "homepage": "https://github.com/Jamaicah/Clan-War#readme",
+  "dependencies": {
+    "better-sqlite3": "^8.1.0",
+    "chalk": "^4.1.2",
+    "discord.js": "^14.7.1",
+    "moment": "^2.29.4",
+    "ms": "^2.1.3",
+    "quick.db": "^9.0.8"
+  }
+}
