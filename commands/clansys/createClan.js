@@ -89,6 +89,9 @@ module.exports = {
           })
           channelLogsId.send({content: `Il Player : ${message.member} ha creato il clan ${nameoftheclan}`})
         }
+
+
+
         break;
         case "delete": {
             const arraydb = await (await client.db.all()).filter(clan => clan.id.startsWith('clan_'))
@@ -108,6 +111,9 @@ module.exports = {
             await client.db.delete(clancheck.id)
             channelLogsId.send({content: `Il Player : ${message.member} ha eliminato il clan ${nameoftheclan}`})
         }
+
+
+
         break;
         case "invite": {
             const nameOfThePlayer = message.mentions.members.first() ||
@@ -146,6 +152,9 @@ module.exports = {
             await client.db.push(`${clanget.id}.members`, nameOfThePlayer.id)
             channelLogsId.send({content: `Il Player : ${message.member} ha invitato il player : ${nameOfThePlayer} nel suo clan`})
         }
+
+
+
         break;
         case "kick": {
             if(!args[1]) return
@@ -179,6 +188,9 @@ module.exports = {
 
             channelLogsId.send({content: `Il Player : ${message.member} ha kickato il player ${nameOfThePlayer} dal suo clan`})
         }
+
+
+
         break;
         case "mod": {
             if(!args[1]) return
@@ -215,14 +227,53 @@ module.exports = {
             channelLogsId.send({content: `Il Player : ${message.member} ha messo mod del suo clan il player : ${nameOfThePlayer}`})
 
         }
-          break;
-      
-        default: {
-          sendError('message',
-          message,
-          )
+        break;
+        case "info":{
+            if(!args[0]) return 
+
+            if(args[1]>0){
+              if(!args[1]) return
+
+              const nameOfThePlayer = message.mentions.members.first() ||
+              message.guild.members.cache.get(args[1]) ||
+              message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
+              message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
+              if(!nameOfThePlayer) return sendError('message',
+              message,
+              '❌ Args wrong',
+              `Please specify the name of the player → \`${client.prefix}clan mod <PlayerName>\``,
+              'Red')
+
+              const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
+
+              if(!playerClan) return sendError('message',
+              message,
+              "❌ Clan not found",
+              "This Player Has No Clan",
+              'Red')
+              else return message.reply("") //Manda tutte le info del clan
+
+            }
+            else{
+              const arraydb = await client.db.all()
+              const clanToFound = arraydb.find(clan => clan.value.members.includes(message.author.id)) 
+            
+              
+              if(!clanToFound) return sendError('message',
+              message,
+              "❌ No Clan",
+              "You don't have a clan",
+              'Red')
+              else return message.reply("") //Manda tutte le info del clan
+            }
         }
-          break;
+        default: {
+          return sendError('message',
+            message,
+            '❌ No Arguments',
+            "You didn't insert any arguments",
+            'Red')
+        }
       }
 
     }
