@@ -81,6 +81,7 @@ module.exports = {
       await client.db.set(`clan_${interaction.message.embeds[0].fields[1].value.replace(' ', '_')}.vocal`, vocalchannel.id)
       await client.db.set(`clan_${interaction.message.embeds[0].fields[1].value.replace(' ', '_')}.text`, textchannel.id)
       await client.db.set(`clan_${interaction.message.embeds[0].fields[1].value.replace(' ', '_')}.status`, 'Created')
+      await client.db.set(`clan_${interaction.message.embeds[0].fields[1].value.replace(' ', '_')}.elo`, client.config.eloStart)
 
       leader.send({embeds: [
         new EmbedBuilder()
@@ -97,7 +98,7 @@ module.exports = {
         .addFields(interaction.message.embeds[0].fields)
         .setFooter({text: `This clan request has been accepted by ${interaction.user.tag}`})
       ], components: []})
-    } else if('deny-clan') {
+    } else if(interaction.customId == 'deny-clan') {
       if(!interaction.member.roles.cache.has(client.config.role.channelRequestsRoleId)) return sendError('interaction',
       interaction,
       '❌ No permission',
