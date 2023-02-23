@@ -15,6 +15,7 @@ module.exports = {
       //Id Istance
       const requestchannel = client.channels.cache.get(client.config.channelRequestsId)
       const channelLogsId = client.channels.cache.get(client.config.channelLogsId)
+      const startElo = client.channels.cache.get(client.config.eloStart)
 
       switch (args[0]) {
         case "create": {
@@ -85,6 +86,7 @@ module.exports = {
             mod: [],
             coleader: [],
             members: [message.author.id],
+            elo: startElo,
             status: 'Creating'
           })
           channelLogsId.send({content: `Il Player : ${message.member} ha creato il clan ${nameoftheclan}`})
@@ -229,44 +231,94 @@ module.exports = {
         }
         break;
         case "info":{
-            if(!args[0]) return 
+            if(args[1]){
+              if(args[1].length>0){
+                const arraydb = await client.db.all()
+                const nameOfThePlayer = message.mentions.members.first() ||
+                message.guild.members.cache.get(args[1]) ||
+                message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
+                message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
+                if(!nameOfThePlayer) return sendError('message',
+                message,
+                '❌ Args wrong',
+                `Please specify the tag of the player → \`${client.prefix}clan info <@#PlayerName>\``,
+                'Red')
 
-            if(args[1]>0){
-              if(!args[1]) return
+                const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
 
-              const nameOfThePlayer = message.mentions.members.first() ||
-              message.guild.members.cache.get(args[1]) ||
-              message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
-              message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
-              if(!nameOfThePlayer) return sendError('message',
-              message,
-              '❌ Args wrong',
-              `Please specify the name of the player → \`${client.prefix}clan mod <PlayerName>\``,
-              'Red')
+                if(!playerClan) return sendError('message',
+                message,
+                "❌ Clan not found",
+                "This Player Has No Clan",
+                'Red')
+                else {
+                  
+                  const clanToFoundRow = await client.db.get(`${playerClan.id}`)
+                  const ids = clanToFoundRow.members.toString().split(" ") 
+                  const mentionMessage = ids.map(ids => `<@${ids}>`).join(" ");
+                  return message.reply("Clan Name : " + clanToFoundRow.nameoftheclan + "\nMembers : " + mentionMessage)
+                }
 
-              const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
-
-              if(!playerClan) return sendError('message',
-              message,
-              "❌ Clan not found",
-              "This Player Has No Clan",
-              'Red')
-              else return message.reply("") //Manda tutte le info del clan
-
+              }
             }
             else{
               const arraydb = await client.db.all()
               const clanToFound = arraydb.find(clan => clan.value.members.includes(message.author.id)) 
-            
-              
               if(!clanToFound) return sendError('message',
               message,
               "❌ No Clan",
               "You don't have a clan",
               'Red')
-              else return message.reply("") //Manda tutte le info del clan
+              else {
+                const clanToFoundRow = await client.db.get(`${clanToFound.id}`)
+                const ids = clanToFoundRow.members.toString().split(" ") 
+                const mentionMessage = ids.map(ids => `<@${ids}>`).join(" ");
+                return message.reply("Clan Name : " + clanToFoundRow.nameoftheclan + "\nMembers : " + mentionMessage)
+              }
             }
         }
+        break;
+        case "cw":{
+          const arraydb = await client.db.all()
+          const playerClan = arraydb.get(clan => clan.value.members.includes(message.author.id))
+          const checkclan = arraydb.find(clan => clan.value.nameoftheclan === args[1])
+          if(playerClan === args[1]) return sendError('message',
+          message,
+          "❌ You Are In This Clan",
+          "You can't send a cw to your same clan",
+          'Red')
+          if(!checkclan) return sendError('message',
+          message,
+          "❌ Clan don't exists",
+          "The clan you specified don't exists.",
+          'Red')
+          else return message.reply("Cw Sent To : " + args[1])
+
+        }
+        break;
+        case "leave":{
+            
+            //Leader or Mod Check
+            const arraydb = await client.db.all()
+            const checkclan = arraydb.find(clan => clan.value.members.includes(message.author.id))
+            if(!checkclan) return sendError('message',
+            message,
+            "❌ You don't have a clan",
+            "You are trying to love from a clan that you are not in",
+            'Red')
+            const clanget = arraydb.find(clan => clan.value.leader == message.author.id)
+            if(clanget) return sendError('message',
+            message,
+            "❌ You can't leave the clan",
+            "You can't leave a clan when you are a leader , you have to delete it!",
+            'Red')
+            if(checkclan && !clanget){
+            const clan = await client.get(checkclan.id);
+            await client.db.pull(`${clanget.id}.members`, message.author.id)
+            channelLogsId.send({content: `Il Player : ${message.member} ha leavvato il clan : ${clan.nameoftheclan}`})
+            }
+        }
+        break;
         default: {
           return sendError('message',
             message,

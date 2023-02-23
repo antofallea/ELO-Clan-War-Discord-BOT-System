@@ -14,4 +14,5 @@ module.exports = {
   channelRequestsId : '1077964896001597480',
   channelRequestsRoleId : '1062136890855268372',
   parentChannelcreate: '1077965099387596912',
+  eloStart : 1000,
 }
