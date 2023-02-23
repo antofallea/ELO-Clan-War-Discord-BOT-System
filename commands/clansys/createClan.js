@@ -411,7 +411,7 @@ module.exports = {
             if(!checkclan) return sendError('message',
             message,
             "❌ You don't have a clan",
-            "You are trying to love from a clan that you are not in",
+            "You are trying to leave from a clan that you are not in",
             'Red')
             const clanget = arraydb.find(clan => clan.value.leader == message.author.id)
             if(clanget) return sendError('message',
@@ -438,21 +438,33 @@ module.exports = {
                 '❌ Args wrong, Player Not Found',
                 `Please specify the tag of the player → \`${client.prefix}clan info <@#PlayerName>\``,
                 'Red')
-                                
-                const playerClan = arraydb.find(clan => clan.value.members.includes(message.author.id))
-                const playerToPromote = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
-                if(playerClan){
-                  const getPlayerClanRow = client.db.get(`${playerClan.id}`)
-                  const memberCheck = client.db.get(`${getPlayerClanRow.members}`)
-                  const modCheck = client.db.get(`${getPlayerClanRow.mod}`)
-                  const coleaderCheck = client.db.get(`${getPlayerClanRow.coleader}`)
-                  const leaderCheck = client.db.get(`${getPlayerClanRow.leader}`)
+                             
+                const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
+                const authorClan = arraydb.find(clan => clan.value.members.includes(message.author.id))
+                const getPlayerClanRow = await client.db.get(`${playerClan.id}`)
+                const getAuthorClanRow = await client.db.get(`${authorClan.id}`)  
+                
+                if(getPlayerClanRow == getAuthorClanRow){
+                  const memberCheck = await client.db.get(`${getPlayerClanRow.members}`)
+                  const modCheck = await client.db.get(`${getPlayerClanRow.mod}`)
+                  const coleaderCheck = await client.db.get(`${getPlayerClanRow.coleader}`)
+                  const leaderCheck = await client.db.get(`${getPlayerClanRow.leader}`)
 
-                  if(modcheck||coleaderCheck||leaderCheck){
-                    if(modcheck.includes(nameOfThePlayer.id && coleader.contains[message.author.id]|| leader.contains[message.author.id])){
-
+                  if(modCheck||coleaderCheck||leaderCheck){
+                    if(memberCheck.includes[nameOfThePlayer.id]){
+                      if(coleaderCheck.includes[message.author.id]||leaderCheck.includes[message.author.id]){
+                        await client.db.pull(`${playerClan.id}.members`, nameOfThePlayer.id)
+                        await client.db.push(`${checkclan.id}.mods`, nameOfThePlayer.id)
+                        channelLogsId.send({content: `Il Player : ${message.member} ha promotato il player <@&${nameOfThePlayer.id}> a Mod`})
+                      }
                     }
-                    else if()
+                    else if(modCheck.includes[nameOfThePlayer.id]){
+                      if(leaderCheck.includes[message.author.id]){
+                        await client.db.pull(`${checkclan.id}.mods`, nameOfThePlayer.id)
+                        await client.db.push(`${checkclan.id}.coleader`, nameOfThePlayer.id)
+                        channelLogsId.send({content: `Il Player : ${message.member} ha promotato il player <@&${nameOfThePlayer.id}> a Coleader`})
+                      }
+                    }
                   }
                   else return sendError('message',
                   message,
@@ -466,20 +478,13 @@ module.exports = {
                 '❌ No Clan',
                 "You don't have a clan  → \`${client.prefix}clan create <ClanName>\`",
                 'Red')
-                
-                
-                if(!modCheck && !coleaderCheck && !leaderCheck) {
-                   
-                }
-                
-                
-                
-
             }
           }
-          else{
-            
-          }
+          else return sendError('message',
+                message,
+                '❌ No Arguments',
+                "You have to specify a player to promot  → \`${client.prefix}clan promote <playerName>\`",
+                'Red')
         }
         
         break;
