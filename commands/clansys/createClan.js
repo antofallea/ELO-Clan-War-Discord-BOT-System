@@ -121,13 +121,12 @@ module.exports = {
           '❌ Args missing',
           'Please specify the user who you wants to invite',
           'Red')
-          console.log(args[1])
+
           const player = message.mentions.members.first() ||
           message.guild.members.cache.get(args[1]) ||
           message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
           message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
 
-          console.log(player)
           if(!player) return sendError('message',
           message,
           '❌ Args wrong',
@@ -161,10 +160,8 @@ module.exports = {
           "You can't invite this user because the clan has 10 players or this user is already in the clan.",
           'Red') 
 
-          const filter = interaction => {
-            interaction.deferUpdate()
-            return interaction.user.id
-          }
+          const filter = interaction => interaction.user.id == player.id
+          
 
           const msg = await player.send({embeds: [
             new EmbedBuilder()
@@ -187,30 +184,17 @@ module.exports = {
             )
           ]})
 
-          const collector = player.dmChannel.createMessageComponentCollector({componentType: ComponentType.Button, time: 120 * 1000, filter: filter})
+          const collector = player.dmChannel.createMessageComponentCollector({componentType: ComponentType.Button, time: 120 * 1000, filter: filter, max: 1})
 
           collector.on('collect', async interaction => {
-            try {
-            if(interaction.customId == 'accept-clan-invite') {
-              collector.stop('Accepted')
-            } else if(interaction.customId == 'deny-clan-invite') {
-              collector.stop('Refused')
+            if(interaction.customId == 'accept-invite') {
+              return collector.stop('Accepted')
+            } else if(interaction.customId == 'deny-invite') {
+              console.log('ciao')
+              return collector.stop('Refused')
             }
-            } catch(error) {
-              if(error.code == DiscordjsErrorCodes.InteractionCollectorError) {
-                return interaction.message.edit({embeds: [
-                  new EmbedBuilder()
-                  .setColor('DarkRed')
-                  .setAuthor({name: 'Ranked Clan Invitation', iconURL: 'https://i.imgur.com/UiLkmX6.png'})
-                  .setDescription(`${message.author} invitation cancelled due to inactivity!\n\n`)
-                  .addFields({ name: 'Name of the clan', value: clanget.value.nameoftheclan, inline: true },
-                    { name: 'Elo', value: `${clanget.value.elo}`, inline: true })
-                ], components: []})
-              } else {
-                console.error(error)
-                return interaction.reply({content: `An internal error occured`, ephemeral: true})
-              }
-            }
+            
+            
           })
 
           collector.on('end', async (items, reason) => {
@@ -239,9 +223,9 @@ module.exports = {
                 new EmbedBuilder()
                 .setColor('DarkRed')
                 .setAuthor({name: 'Ranked Clan Invitation', iconURL: 'https://i.imgur.com/UiLkmX6.png'})
-                .setDescription(`${message.author} refused the invation for the clan!\n\n`)
+                .setDescription(`${message.author} refused the invite for the clan!\n\n`)
                 .addFields({ name: 'Name of the clan', value: clanget.value.nameoftheclan, inline: true },
-                  { name: 'Elo', value: clanget.value.elo, inline: true })
+                  { name: 'Elo', value: `${clanget.value.elo}`, inline: true })
               ], components: []})
             }
           })
@@ -426,65 +410,170 @@ module.exports = {
         }
 
         case "promote":{
-          if(args[1]){
-            if(args[1].length>0){
-                const arraydb = await client.db.all()
-                const nameOfThePlayer = message.mentions.members.first() ||
-                message.guild.members.cache.get(args[1]) ||
-                message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
-                message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
-                if(!nameOfThePlayer) return sendError('message',
-                message,
-                '❌ Args wrong, Player Not Found',
-                `Please specify the tag of the player → \`${client.prefix}clan info <@#PlayerName>\``,
-                'Red')
-                             
-                const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
-                const authorClan = arraydb.find(clan => clan.value.members.includes(message.author.id))
-                const getPlayerClanRow = await client.db.get(`${playerClan.id}`)
-                const getAuthorClanRow = await client.db.get(`${authorClan.id}`)  
-                
-                if(getPlayerClanRow == getAuthorClanRow){
-                  const memberCheck = await client.db.get(`${getPlayerClanRow.members}`)
-                  const modCheck = await client.db.get(`${getPlayerClanRow.mod}`)
-                  const coleaderCheck = await client.db.get(`${getPlayerClanRow.coleader}`)
-                  const leaderCheck = await client.db.get(`${getPlayerClanRow.leader}`)
+          if(!args[1]) return sendError('message',
+          message,
+          '❌ No Arguments',
+          "You have to specify a player to promote  → \`${client.prefix}clan promote <playerName>\`",
+          'Red')
 
-                  if(modCheck||coleaderCheck||leaderCheck){
-                    if(memberCheck.includes[nameOfThePlayer.id]){
-                      if(coleaderCheck.includes[message.author.id]||leaderCheck.includes[message.author.id]){
-                        await client.db.pull(`${playerClan.id}.members`, nameOfThePlayer.id)
-                        await client.db.push(`${checkclan.id}.mods`, nameOfThePlayer.id)
-                        channelLogsId.send({content: `Il Player : ${message.member} ha promotato il player <@&${nameOfThePlayer.id}> a Mod`})
-                      }
-                    }
-                    else if(modCheck.includes[nameOfThePlayer.id]){
-                      if(leaderCheck.includes[message.author.id]){
-                        await client.db.pull(`${checkclan.id}.mods`, nameOfThePlayer.id)
-                        await client.db.push(`${checkclan.id}.coleader`, nameOfThePlayer.id)
-                        channelLogsId.send({content: `Il Player : ${message.member} ha promotato il player <@&${nameOfThePlayer.id}> a Coleader`})
-                      }
-                    }
-                  }
-                  else return sendError('message',
-                  message,
-                  '❌ No Permission',
-                  "You don't have permission clan  → \`${client.prefix}clan create <ClanName>\`",
-                  'Red')
+          const arraydb = await client.db.all()
+          const nameOfThePlayer = message.mentions.members.first() ||
+            message.guild.members.cache.get(args[1]) ||
+            message.guild.members.cache.find(r => r.user.username.toLowerCase() === args[1].toLocaleLowerCase()) ||
+            message.guild.members.cache.find(ro => ro.displayName.toLowerCase() === args[1].toLocaleLowerCase());
+          if (!nameOfThePlayer) return sendError('message',
+            message,
+            '❌ Args wrong, Player Not Found',
+            `Please specify the tag of the player → \`${client.prefix}clan info <@#PlayerName>\``,
+            'Red')
 
-                }
-                else return sendError('message',
-                message,
-                '❌ No Clan',
-                "You don't have a clan  → \`${client.prefix}clan create <ClanName>\`",
-                'Red')
-            }
-          }
-          else return sendError('message',
-                message,
-                '❌ No Arguments',
-                "You have to specify a player to promot  → \`${client.prefix}clan promote <playerName>\`",
-                'Red')
+          if (nameOfThePlayer == message.member) return sendError('message',
+            message,
+            '❌ Cannot promote',
+            "You can't promote yourself bruh.",
+            'Red')
+
+          const playerClan = arraydb.find(clan => clan.value.members.includes(nameOfThePlayer.id))
+          const authorClan = arraydb.find(clan => clan.value.members.includes(message.author.id))
+
+          if (!authorClan) return sendError('message',
+            message,
+            '❌ Clan not found',
+            "You don't have a clan",
+            'Red')
+
+          if (!playerClan) return sendError('message',
+            message,
+            '❌ Clan not found',
+            'The player you specified has no clan',
+            'Red')
+
+          if (playerClan !== authorClan) return sendError('message',
+            message,
+            '❌ Args wrong',
+            'The player you specified is in another clan.',
+            'Red')
+
+          if (playerClan.value.members.includes(nameOfThePlayer.id) && !playerClan.value.mod.includes(nameOfThePlayer.id) && !playerClan.value.coleader.includes(nameOfThePlayer.id) && playerClan.value.leader !== nameOfThePlayer.id) {
+            if (playerClan.value.leader !== message.author.id && !playerClan.value.coleader.includes(message.author.id)) return sendError('message',
+              message,
+              '❌ Cannot promote',
+              "You are not a coleader or the leader of the clan",
+              'Red')
+            await client.db.push(`${playerClan.id}.mod`, nameOfThePlayer.id)
+            channelLogsId.send({ content: `Il Player : ${message.member} ha promotato il player <@${nameOfThePlayer.id}> a Mod` })
+            return message.channel.send({
+              embeds: [
+                new EmbedBuilder()
+                  .setColor(client.config.embeds.generalcolor)
+                  .setTitle('✅ Promote successfully')
+                  .setDescription(`Hai promosso correttamente il player ${nameOfThePlayer} a Mod`)
+                  .setAuthor({ name: nameOfThePlayer.user.username, iconURL: nameOfThePlayer.displayAvatarURL() })
+              ], content: nameOfThePlayer.toString()
+            })
+          } else if (playerClan.value.mod.includes(nameOfThePlayer.id)) {
+            if (playerClan.value.leader !== message.author.id) return sendError('message',
+              message,
+              '❌ Cannot promote',
+              "You are not the leader of the clan",
+              'Red')
+            await client.db.pull(`${playerClan.id}.mod`, nameOfThePlayer.id)
+            await client.db.push(`${playerClan.id}.coleader`, nameOfThePlayer.id)
+            channelLogsId.send({ content: `Il Player : ${message.member} ha promotato il player <@${nameOfThePlayer.id}> a CoLeader` })
+            return message.channel.send({
+              embeds: [
+                new EmbedBuilder()
+                  .setColor(client.config.embeds.generalcolor)
+                  .setTitle('✅ Promote successfully')
+                  .setDescription(`Hai promosso correttamente il player ${nameOfThePlayer} a CoLeader`)
+                  .setAuthor({ name: nameOfThePlayer.user.username, iconURL: nameOfThePlayer.displayAvatarURL() })
+              ], content: nameOfThePlayer.toString()
+            })
+          } else if (playerClan.value.coleader.includes(nameOfThePlayer.id)) {
+            if (playerClan.value.leader !== message.author.id) return sendError('message',
+              message,
+              '❌ Cannot promote',
+              "You are not the leader of the clan",
+              'Red')
+            const msg = await message.channel.send({
+              embeds: [
+                new EmbedBuilder()
+                  .setColor('Yellow')
+                  .setTitle('Warning!')
+                  .setAuthor({ name: message.author.username, iconURL: message.author.displayAvatarURL() })
+                  .setDescription(`Are you sure to transfer the clan to ${nameOfThePlayer}?`)
+              ], components: [
+                new ActionRowBuilder()
+                  .addComponents(
+                    new ButtonBuilder()
+                      .setCustomId('transfer-accept')
+                      .setStyle(ButtonStyle.Success)
+                      .setLabel('Accept'),
+                    new ButtonBuilder()
+                      .setCustomId('transfer-deny')
+                      .setStyle(ButtonStyle.Danger)
+                      .setLabel('Deny')
+                  )
+              ]
+            })
+
+            const filter = interaction => interaction.user.id == message.author.id
+
+            const collector = msg.createMessageComponentCollector({ filter: filter, time: 10 * 1000, max: 1, componentType: ComponentType.Button })
+
+            collector.on('collect', async (interaction) => {
+              interaction.deferUpdate()
+              if (interaction.customId == 'transfer-accept') {
+                collector.stop('Accepted')
+              } else if (interaction.customId == 'transfer-deny') {
+                collector.stop('Refused')
+              }
+            })
+
+            collector.on('end', async (items, reason) => {
+              if (!items.size) return msg.edit({
+                embeds: [
+                  new EmbedBuilder()
+                    .setColor('DarkRed')
+                    .setTitle('🕙 Time expired')
+                    .setDescription('Transfer time is expired')
+                    .setAuthor({ name: message.author.username, iconURL: message.author.displayAvatarURL() })
+                ], components: []
+              })
+
+              const array = items.map(item => item)
+
+              if (reason == 'Accepted') {
+                await client.db.pull(`${playerClan.id}.coleader`, nameOfThePlayer.id)
+                await client.db.push(`${playerClan.id}.coleader`, array[0].user.id)
+                await client.db.set(`${playerClan.id}.leader`, nameOfThePlayer.id)
+
+                return msg.edit({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setColor(client.config.embeds.generalcolor)
+                      .setTitle('✅ Transfer successfully')
+                      .setDescription(`Clan transfered to ${nameOfThePlayer}, Hi new leader!`)
+                      .setAuthor({ name: nameOfThePlayer.user.username, iconURL: nameOfThePlayer.user.displayAvatarURL() })
+                  ], components: []
+                })
+              } else if (reason == 'Refused') {
+                return msg.edit({
+                  embeds: [
+                    new EmbedBuilder()
+                      .setColor(client.config.embeds.generalcolor)
+                      .setTitle('✅ Transfer Canceled')
+                      .setDescription(`Clan transfer request has been canceled`)
+                      .setAuthor({ name: message.author.username, iconURL: message.author.displayAvatarURL() })
+                  ], components: []
+                })
+              } else return;
+            })
+          } else if (nameOfThePlayer.id == playerClan.value.leader) return sendError('message',
+            message,
+            '❌ Cannot promote',
+            'The player you specified is the leader of the clan',
+            'Red')
         }
         
         break;
