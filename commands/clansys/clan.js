@@ -190,7 +190,6 @@ module.exports = {
             if(interaction.customId == 'accept-invite') {
               return collector.stop('Accepted')
             } else if(interaction.customId == 'deny-invite') {
-              console.log('ciao')
               return collector.stop('Refused')
             }
             
