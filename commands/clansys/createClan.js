@@ -190,7 +190,6 @@ module.exports = {
             if(interaction.customId == 'accept-invite') {
               return collector.stop('Accepted')
             } else if(interaction.customId == 'deny-invite') {
-              console.log('ciao')
               return collector.stop('Refused')
             }
             
@@ -404,11 +403,19 @@ module.exports = {
             "You can't leave a clan when you are a leader , you have to delete it!",
             'Red')
 
+            if(checkclan.value.coleader.includes(message.author.id)) await client.db.pull(`${checkclan.id}.coleader`, message.author.id)
+            if(checkclan.value.mod.includes(message.author.id)) await client.db.pull(`${checkclan.id}.mod`, message.author.id)
+            if(checkclan.value.leader == message.author.id) return sendError('message',
+            message, 
+            "❌ Leader can't leave",
+            "You're the leader of the clan so you can't leave.",
+            "Red")
             await client.db.pull(`${checkclan.id}.members`, message.author.id)
             channelLogsId.send({content: `Il Player : ${message.member} ha leavvato il clan : ${checkclan.value.nameoftheclan}`})
 
         }
 
+        break;
         case "promote":{
           if(!args[1]) return sendError('message',
           message,
