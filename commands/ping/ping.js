@@ -24,3 +24,4 @@ module.exports.slash = {
     interaction.reply({content: `I'm on ${client.ws.ping}ms`, ephemeral: true})
   }
 }
+module.exports.slashes = [module.exports.slash]

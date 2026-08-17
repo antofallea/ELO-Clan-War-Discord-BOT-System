@@ -32,6 +32,7 @@ class discordClient extends Client {
   }
 
   start() {
+    if (!this.config.token) throw new Error('DISCORD_TOKEN non impostata. Configurala come variabile d\'ambiente.');
     loadHandlers(this)
     this.login(this.config.token)
   }

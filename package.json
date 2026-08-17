@@ -4,7 +4,8 @@
   "description": "Clanwar system created by Jamaicah and andrew",
   "main": "src/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/app.js",
+    "test": "node --check src/app.js && node --check commands/access/access.js && node --check commands/clansys/clan.js && node --check commands/moderation/staff.js && node --check commands/queue/queue.js && node --check commands/queuevoice/queuevoice.js && node --check commands/register/register.js && node --check commands/season/season.js && node --check events/buttons/accept-refuse-clan.js && node --check events/buttons/picking.js && node --check events/buttons/score.js && node --check events/guild/queueVoice.js && node --check events/guild/registerModal.js && node test/queues.test.js"
   },
   "repository": {
     "type": "git",
@@ -17,7 +18,7 @@
   },
   "homepage": "https://github.com/Jamaicah/Clan-War#readme",
   "dependencies": {
-    "better-sqlite3": "^8.1.0",
+    "better-sqlite3": "^13.0.3",
     "chalk": "^4.1.2",
     "discord.js": "^14.7.1",
     "moment": "^2.29.4",

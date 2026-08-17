@@ -1,8 +1,6 @@
 const fs = require('fs');
 const path = require('path');
 const chalk = require('chalk');
-const { EmbedBuilder, WebhookClient } = require('discord.js');
-const { inspect } = require('util');
 
 /**
  * 
@@ -17,89 +15,31 @@ function loadHandlers(client) {
     files.forEach((file) => {
       let command = require(`../../../commands/${directory}/${file}`)
       if(!command) return console.log(chalk.red(`❌ /commands/${directory}/${file} non è stato caricato`))
-      if(!command?.name || !command.slash?.name) return console.log(chalk.red(`❌ /commands/${directory}/${file} non è stato caricato perchè non hai specificato il nome.`))
+      const slashDefinitions = command.slashes || (command.slash ? [command.slash] : []);
+      if(!command?.name || !slashDefinitions.length || slashDefinitions.some(slash => !slash?.name)) return console.log(chalk.red(`❌ /commands/${directory}/${file} non è stato caricato perchè non hai specificato il nome.`))
       const missing = [];
-      if(!command.description || !command.slash.description) missing.push('descrizione')
-      if(!command.usage || !command.slash.usage) missing.push('usage')
+      if(!command.description || slashDefinitions.some(slash => !slash.description)) missing.push('descrizione')
+      if(!command.usage) missing.push('usage')
       if(missing.length) console.log(chalk.yellow(`(/commands/${directory}/${file}) è consigliato un: ${missing.join(' & ')}`))
 
       client.commands.set(command.name, command)
-      if(command.slash && command.slash?.name && command.slash?.description) client.slashCommands.set(command.slash?.name, command.slash)
+      slashDefinitions.forEach(slash => { if(slash.name && slash.description) client.slashCommands.set(slash.name, slash) })
     })
   })
-  // anticrash
-
-  const errorchannel = new WebhookClient({url: "https://canary.discord.com/api/webhooks/1076862941351137300/8IPKREA4ukRhPoZUDDDruG0By6BOqoGNmKnQt7K3aapN_IHmkI0ECugAnAy4fs7fMLuU"})
-
   client.on('error', (err) => {
-    console.log(err)
-    return errorchannel.send({embeds: [
-      new EmbedBuilder()
-      .setColor('Red')
-      .setTitle('An internal error occured')
-      .setURL("https://discordjs.guide/popular-topics/errors.html#api-errors")
-      .setDescription(`\`\`\`${inspect(err, { depth: 0 }).slice(0, 1000)}\`\`\``)
-      .setTimestamp()
-    ]})
+    console.error('Discord client error:', err)
   })
 
   process.on('unhandledRejection', (reason, promise) => {
-    console.log(reason, "\n", promise)
-    return errorchannel.send({embeds: [
-      new EmbedBuilder()
-      .setColor('Red')
-      .setTitle('Unhandled Rejection/Catch')
-      .setURL("https://nodejs.org/api/process.html#event-unhandledrejection")
-      .addFields(
-          { name: "Reason", value: `\`\`\`${inspect(reason, { depth: 0 }).slice(0, 1000)}\`\`\`` },
-          { name: "Promise", value: `\`\`\`${inspect(promise, { depth: 0 }).slice(0, 1000)}\`\`\`` }
-      )
-      .setTimestamp()
-    ]})
+    console.error('Unhandled rejection:', reason, promise)
   })
 
   process.on('uncaughtException', (err, origin) => {
-    console.log(err, "\n", origin);
-    return errorchannel.send({embeds: [
-      new EmbedBuilder()
-      .setColor('Red')
-      .setTitle("Uncaught Exception/Catch")
-      .setURL("https://nodejs.org/api/process.html#event-uncaughtexception")
-      .addFields(
-          { name: "Error", value: `\`\`\`${inspect(err, { depth: 0 }).slice(0, 1000)}\`\`\`` },
-          { name: "Origin", value: `\`\`\`${inspect(origin, { depth: 0 }).slice(0, 1000)}\`\`\`` }
-      )
-      .setTimestamp()
-    ]})
-  })
-
-  process.on("uncaughtExceptionMonitor", (err, origin) => {
-    console.log(err, "\n", origin)
-    return errorchannel.send({embeds: [
-      new EmbedBuilder()
-      .setColor('Red')
-      .setTitle("Uncaught Exception Monitor")
-      .setURL("https://nodejs.org/api/process.html#event-uncaughtexceptionmonitor")
-      .addFields(
-          { name: "Error", value: `\`\`\`${inspect(err, { depth: 0 }).slice(0, 1000)}\`\`\`` },
-          { name: "Origin", value: `\`\`\`${inspect(origin, { depth: 0 }).slice(0, 1000)}\`\`\`` }
-      )
-      .setTimestamp()
-    ]})
+    console.error('Uncaught exception:', err, origin);
   })
 
   process.on('warning', (warn) => {
-    console.log(warn)
-    return errorchannel.send({embeds: [
-      new EmbedBuilder()
-      .setColor('Red')
-      .setTitle("Uncaught Exception Monitor Warning")
-      .setURL("https://nodejs.org/api/process.html#event-warning")
-      .addFields(
-          { name: "Warning", value: `\`\`\`${inspect(warn, { depth: 0 }).slice(0, 1000)}\`\`\`` }
-      )
-      .setTimestamp()
-    ]})
+    console.warn('Node warning:', warn)
   })
 
   // events handler

@@ -19,6 +19,13 @@ module.exports = {
     console.log(chalk.hex('#00AAAA')(`
      The bot is online and ready to manage RBWCM.`))
 
+    // Remove temporary tournament rooms that expired while the bot was offline.
+    try {
+      await require('../../commands/moderation/staff').cleanupTemporaryTournaments(client);
+    } catch (error) {
+      console.error('Temporary tournament cleanup failed:', error);
+    }
+
     client.guilds.cache.forEach(guild => {
         let array = [];
         client.slashCommands.forEach(cmd => {
